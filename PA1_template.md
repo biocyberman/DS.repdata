@@ -6,7 +6,8 @@ output: html_document: keep_md: true
 ## Loading and preprocessing the data
 
 
-```{r globaloptions }
+
+```r
 # Set global option for echoing R code.
 opts_chunk$set(echo = TRUE, fig.height = 5, fig.width = 10)
 # Load some utility functions
@@ -17,14 +18,32 @@ source("UtilityFunctions.R")
 
     Here we first check and download the original zip file if neccessary. Then we unzip and put the data in to `data` variable. However, before that we load `dplyr` library for convenient data manipulation and `ggvis` for plotting.
     
-    ```{r libraryloading, results='hide'}
+    
+    ```r
         # Load some required libraries
         required_package("dplyr")
+    ```
+    
+    ```
+    ## 
+    ## Attaching package: 'dplyr'
+    ## 
+    ## The following object is masked from 'package:stats':
+    ## 
+    ##     filter
+    ## 
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     intersect, setdiff, setequal, union
+    ```
+    
+    ```r
         required_package("ggplot2")
     ```
 
 
-    ```{r preprocessing}
+    
+    ```r
     fileUrl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
     zipfile <- "activity.zip"
     
@@ -49,19 +68,22 @@ source("UtilityFunctions.R")
 ## What is mean total number of steps taken per day?
 
 We remove rows with missing data on steps column. 
-```{r calculatemean}
+
+```r
 goodcases <- complete.cases(activitydata)
 data_no_missing <- filter(activitydata, goodcases)
 ```
 
 1. Calculate the total number of steps taken per day
-    ```{r totalnumberofstepsperday}
+    
+    ```r
     totalstepsperday <- data_no_missing %>% group_by(date) %>%
         summarise(totalsteps=sum(steps))
     ```
 2.  Make a histogram of the total number of steps taken each day
     
-```{r makehistogram}
+
+```r
     ggplot(totalstepsperday, aes(x = totalsteps)) +
         # set binwidth = 500 meaning that we group all values (i.e. stepsperday)
         # that are different less than or equal 500 to be in the same been, and 
@@ -71,15 +93,18 @@ data_no_missing <- filter(activitydata, goodcases)
         xlab("Total steps per day")
 ```
 
+![plot of chunk makehistogram](figure/makehistogram-1.png) 
+
 We have: 
 
-1. Mean of total number of steps per day: `r origMean <-mean(totalstepsperday$totalsteps); sprintf("%.3f", origMean)`
-2. Median of total number of steps per day: `r origMedian <- median(totalstepsperday$totalsteps); origMedian` 
+1. Mean of total number of steps per day: 10766.189
+2. Median of total number of steps per day: 10765 
 
 ## What is the average daily activity pattern?
 
 1. The time series plot of the 5-minute interval vs the average number of steps taken.
-    ```{r timeseries}
+    
+    ```r
     averagestepsperinterval <- data_no_missing %>% group_by(interval) %>%
         summarise(averageperinterval = mean(steps)) %>%
         # Sort the data for later use
@@ -94,20 +119,25 @@ We have:
             geom_vline(xintercept = maxpoint[[1,"interval"]], col = "red", linetype = 2) +
         annotate("text", label = sprintf("Interval: %s, Average steps: %.3f", maxpoint[[1,1]], maxpoint[[1,2]]), 
                  x = 1.1 * maxpoint[[1,1]] , y = 1.1 * maxpoint[[1,2]])
+    ```
+    
+    ![plot of chunk timeseries](figure/timeseries-1.png) 
+    
+    ```r
     # Interval ID is constructed the Nth hour followed by the Nth minute. 
     #  So 155 is The 55th minutes of the first hour.
     ```
 
 2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
-The answer is simple after we have computed average values and sort them`r sprintf("Interval: %s, Average steps at this interval: %.3f", maxpoint[[1,1]], maxpoint[[1,2]])`
+The answer is simple after we have computed average values and sort themInterval: 835, Average steps at this interval: 206.170
 
 ## Imputing missing values
 
 1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
 
-    Number of rows with missing values: `r nrow(activitydata) - nrow(data_no_missing)`
+    Number of rows with missing values: 2304
     
-    Number of rows with missing data on "steps" column: `r nrow(filter(activitydata, is.na(steps)))`
+    Number of rows with missing data on "steps" column: 2304
 
 2. Devise a strategy for filling in all of the missing values in the dataset.
 
@@ -117,7 +147,8 @@ The answer is simple after we have computed average values and sort them`r sprin
 
     This code chunk also illustrates how to replace a value with another value on the same row, but different column. A kind of Excel's lookup function.
 
-    ```{r medianperinterval}
+    
+    ```r
     # Calculate medians
     medianstepsperinterval <- data_no_missing %>% group_by(interval) %>%
     summarise(medianvalues = median(steps)) 
@@ -133,7 +164,8 @@ The answer is simple after we have computed average values and sort them`r sprin
 
 4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. 
 
-    ```{r imputeddataHistogram}
+    
+    ```r
     imputedTotalStepsPerDay <- imputeddata %>% group_by(date) %>%
         summarise(totalsteps=sum(steps))
     
@@ -142,23 +174,25 @@ The answer is simple after we have computed average values and sort them`r sprin
                        fill = "red", col = "yellow", binwidth = 500) +
         xlab("Total steps per day") + labs(title = "Histogram of imputed data")
     ```
+    
+    ![plot of chunk imputeddataHistogram](figure/imputeddataHistogram-1.png) 
 
 
      Mean total number of steps taken per day:
-     **`r imputedMean<-mean(imputedTotalStepsPerDay$totalsteps);  sprintf("%.3f",imputedMean)`**. 
+     **9503.869**. 
      
      Median total number of steps taken per day:
-     **`r imputedMedian <-median(imputedTotalStepsPerDay$totalsteps); imputedMedian`**
+     **10395**
      
      **Before Imputing:**
      
-        Mean of total number of steps per day: `r sprintf("%.3f", origMean)`
+        Mean of total number of steps per day: 10766.189
         
-        Median of total number of steps per day: `r origMedian`
+        Median of total number of steps per day: 10765
     
     Do these values differ from the estimates from the first part of the assignment?
     
-    **`r if(origMean !=  imputedMean && origMedian != imputedMedian) {"Yes, they do."} else {"No, they don't."}`**
+    **Yes, they do.**
         
     What is the impact of imputing missing data on the estimates of the total daily number of steps?
     
@@ -168,7 +202,8 @@ The answer is simple after we have computed average values and sort them`r sprin
 
 1. Create a new factor variable in the dataset with two levels ??? "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
 
-    ```{r adddayclass}
+    
+    ```r
     weekendOrWeekday <- function(x=vector()){
         dayNames <- strptime(x, format="%Y-%m-%d")
         dayNumbers <- as.numeric(format(dayNames, "%u"))
@@ -176,16 +211,17 @@ The answer is simple after we have computed average values and sort them`r sprin
     } 
     stepsPerIntervalByDay <- imputeddata %>% mutate(dayclass = weekendOrWeekday(date)) %>%
         group_by(interval, dayclass) %>% summarise(meansteps=mean(steps))
-        
     ```
 
 2. Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
 
-    ```{r PlotByDayClass}
+    
+    ```r
     p <- ggplot(stepsPerIntervalByDay, aes(x = interval, y = meansteps)) + geom_line() 
         
     p +  facet_grid(dayclass ~ .) + ylab("Mean number of steps") + xlab("Interval ID") +
         labs(title = "Activity Weekdays vs Weekends")
-    
     ```
+    
+    ![plot of chunk PlotByDayClass](figure/PlotByDayClass-1.png) 
 
